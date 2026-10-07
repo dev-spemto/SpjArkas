@@ -28,7 +28,7 @@ class DashboardController extends Controller
         $latestMonthName = $latestMonthNumber > 0 ? $bulanIndo[$latestMonthNumber] : 'Belum Ada Transaksi';
         $progressPercentage = round(($latestMonthNumber / 12) * 100);
 
-        // 2. Tahun BOSP Selesai (Diambil dari Dokumen BOSP yang sudah di-upload)
+        // 2. Tahun BOSP Selesai
         $completedYears = BospDocument::whereNotNull('file_path')
             ->where('file_path', '!=', '')
             ->select('tahun')
@@ -42,23 +42,48 @@ class DashboardController extends Controller
         $totalSaldoSeluruhnya = 0;
 
         foreach ($sumberDana as $jenis) {
-            $penerimaan = Spj::where('jenis_bos', $jenis)
+            // A. Pagu Diterima (Hanya pencairan Dana BOSP Murni)
+            $paguDiterima = Spj::where('jenis_bos', $jenis)
+                ->whereYear('tanggal_transaksi', $currentYear)
+                ->where('jenis_transaksi', 'Penerimaan')
+                ->where(function($q) {
+                    $q->where('uraian', 'like', '%Terima Dana%')
+                      ->orWhere('uraian', 'like', '%Penerimaan Dana%')
+                      ->orWhere('uraian', 'like', '%Pencairan%');
+                })
+                ->sum('nominal');
+
+            // B. Total Pembelanjaan Murni (Mengecualikan Tarik Tunai, Pindahan Kas, Pajak Bunga, & Bunga Bank)
+            $pengeluaranMurni = Spj::where('jenis_bos', $jenis)
+                ->whereYear('tanggal_transaksi', $currentYear)
+                ->where('jenis_transaksi', 'Pengeluaran')
+                ->where(function($q) {
+                    $q->where('uraian', 'not like', '%Tarik Tunai%')
+                      ->where('uraian', 'not like', '%Pengambilan Tunai%')
+                      ->where('uraian', 'not like', '%Pindahan Kas%')
+                      ->where('uraian', 'not like', '%Pajak Bunga%')
+                      ->where('uraian', 'not like', '%Bunga Bank%');
+                })
+                ->sum('nominal');
+
+            // C. Perhitungan Saldo Kas Akhir BKU (Persis Baris Paling Terakhir BKU)
+            $totalSemuaPenerimaanBku = Spj::where('jenis_bos', $jenis)
                 ->whereYear('tanggal_transaksi', $currentYear)
                 ->where('jenis_transaksi', 'Penerimaan')
                 ->sum('nominal');
 
-            $pengeluaran = Spj::where('jenis_bos', $jenis)
+            $totalSemuaPengeluaranBku = Spj::where('jenis_bos', $jenis)
                 ->whereYear('tanggal_transaksi', $currentYear)
                 ->where('jenis_transaksi', 'Pengeluaran')
                 ->sum('nominal');
 
-            $saldo = $penerimaan - $pengeluaran;
-            $totalSaldoSeluruhnya += $saldo;
+            $saldoKasBarisTerakhir = $totalSemuaPenerimaanBku - $totalSemuaPengeluaranBku;
+            $totalSaldoSeluruhnya += $saldoKasBarisTerakhir;
 
             $ringkasanBos[$jenis] = [
-                'penerimaan' => $penerimaan,
-                'pengeluaran' => $pengeluaran,
-                'saldo' => $saldo,
+                'penerimaan'      => $paguDiterima,          // Total Pagu Diterima
+                'pengeluaran'     => $pengeluaranMurni,      // Total Pembelanjaan Murni
+                'saldo'           => $saldoKasBarisTerakhir, // Saldo Baris Terakhir BKU
                 'total_transaksi' => Spj::where('jenis_bos', $jenis)->whereYear('tanggal_transaksi', $currentYear)->count()
             ];
         }

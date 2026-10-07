@@ -373,10 +373,10 @@
                 <span>Pembukuan BOSP</span>
             </a>
 
-            <!-- Download Template -->
+            <!-- Direktori Monev -->
             <a href="{{ route('templates.index') }}" class="nav-link-custom {{ request()->routeIs('templates.*') ? 'active' : '' }}">
-                <i class="bi bi-file-earmark-arrow-down me-2 fs-6"></i>
-                <span>Download Template</span>
+                <i class="bi bi-folder-check me-2 fs-6"></i>
+                <span>Direktori Monev</span>
             </a>
 
             <!-- 3. MASTER DATA -->

@@ -17,20 +17,20 @@ class SchoolProfileController extends Controller
     public function storeOrUpdate(Request $request)
     {
         $validated = $request->validate([
-            'nama_sekolah' => 'required|string|max:255',
-            'npsn' => 'nullable|string|max:50',
-            'alamat' => 'nullable|string',
-            'kecamatan' => 'nullable|string|max:255',
-            'kabupaten_kota' => 'nullable|string|max:255',
-            'provinsi' => 'nullable|string|max:255',
+            'nama_sekolah'        => 'required|string|max:255',
+            'npsn'                => 'nullable|string|max:50',
+            'alamat'              => 'nullable|string',
+            'kecamatan'           => 'nullable|string|max:255',
+            'kabupaten_kota'      => 'nullable|string|max:255',
+            'provinsi'            => 'nullable|string|max:255',
             'nama_kepala_sekolah' => 'required|string|max:255',
-            'nip_kepala_sekolah' => 'nullable|string|max:100',
-            'nama_bendahara' => 'required|string|max:255',
-            'nip_bendahara' => 'nullable|string|max:100',
-            'nama_komite' => 'nullable|string|max:255',
-            'nip_komite' => 'nullable|string|max:100',
-            'redaksi_diterima' => 'nullable|string|max:255',
-            'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'nip_kepala_sekolah'  => 'nullable|string|max:100',
+            'nama_bendahara'      => 'required|string|max:255',
+            'nip_bendahara'       => 'nullable|string|max:100',
+            'nama_komite'         => 'nullable|string|max:255',
+            'nip_komite'          => 'nullable|string|max:100',
+            'redaksi_diterima'    => 'nullable|string|max:255',
+            'logo'                => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
         $profile = SchoolProfile::firstOrNew();

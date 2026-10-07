@@ -92,14 +92,39 @@
         <!-- BOS Reguler -->
         <div class="col-md-3">
             <div class="card border border-secondary-subtle border-start border-4 border-primary shadow-sm h-100">
-                <div class="card-body p-3">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="fw-bold text-muted small">BOS REGULER</span>
-                        <span class="badge bg-primary-subtle text-primary">{{ $ringkasanBos['Reguler']['total_transaksi'] }} Transaksi</span>
+                <div class="card-body p-3 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="fw-bold text-muted small">BOS REGULER</span>
+                            <span class="badge bg-primary-subtle text-primary">{{ $ringkasanBos['Reguler']['total_transaksi'] }} Transaksi</span>
+                        </div>
+
+                        <!-- 1. Total Pagu Diterima -->
+                        <div class="mb-2">
+                            <small class="text-muted d-block fs-7">Total Pagu Diterima:</small>
+                            <span class="fw-bold text-success fs-6">
+                                Rp {{ number_format($ringkasanBos['Reguler']['penerimaan'], 0, ',', '.') }}
+                            </span>
+                        </div>
+
+                        <!-- 2. Total Pembelanjaan -->
+                        <div class="mb-2">
+                            <small class="text-muted d-block fs-7">Total Pembelanjaan:</small>
+                            <span class="fw-semibold text-danger fs-6">
+                                Rp {{ number_format($ringkasanBos['Reguler']['pengeluaran'], 0, ',', '.') }}
+                            </span>
+                        </div>
+
+                        <!-- 3. Sisa Anggaran -->
+                        <div class="pt-2 border-top mt-2">
+                            <small class="text-muted d-block fs-7">Sisa Anggaran / Saldo:</small>
+                            <h6 class="fw-bold text-primary mb-0">
+                                Rp {{ number_format($ringkasanBos['Reguler']['saldo'], 0, ',', '.') }}
+                            </h6>
+                        </div>
                     </div>
-                    <h5 class="fw-bold text-primary mb-1">Rp {{ number_format($ringkasanBos['Reguler']['saldo'], 0, ',', '.') }}</h5>
-                    <small class="text-muted d-block fs-7">Keluar: Rp {{ number_format($ringkasanBos['Reguler']['pengeluaran'], 0, ',', '.') }}</small>
-                    <a href="{{ route('spjs.index', ['jenis_bos' => 'Reguler']) }}" class="btn btn-sm btn-outline-primary w-100 mt-2">Buka BKU Reguler</a>
+
+                    <a href="{{ route('spjs.index', ['jenis_bos' => 'Reguler']) }}" class="btn btn-sm btn-outline-primary w-100 mt-3">Buka BKU Reguler</a>
                 </div>
             </div>
         </div>
@@ -107,14 +132,39 @@
         <!-- BOS Afirmasi -->
         <div class="col-md-3">
             <div class="card border border-secondary-subtle border-start border-4 border-warning shadow-sm h-100">
-                <div class="card-body p-3">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="fw-bold text-muted small">BOS AFIRMASI</span>
-                        <span class="badge bg-warning-subtle text-warning-emphasis">{{ $ringkasanBos['Afirmasi']['total_transaksi'] }} Transaksi</span>
+                <div class="card-body p-3 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="fw-bold text-muted small">BOS AFIRMASI</span>
+                            <span class="badge bg-warning-subtle text-warning-emphasis">{{ $ringkasanBos['Afirmasi']['total_transaksi'] }} Transaksi</span>
+                        </div>
+
+                        <!-- 1. Total Pagu Diterima -->
+                        <div class="mb-2">
+                            <small class="text-muted d-block fs-7">Total Pagu Diterima:</small>
+                            <span class="fw-bold text-success fs-6">
+                                Rp {{ number_format($ringkasanBos['Afirmasi']['penerimaan'], 0, ',', '.') }}
+                            </span>
+                        </div>
+
+                        <!-- 2. Total Pembelanjaan -->
+                        <div class="mb-2">
+                            <small class="text-muted d-block fs-7">Total Pembelanjaan:</small>
+                            <span class="fw-semibold text-danger fs-6">
+                                Rp {{ number_format($ringkasanBos['Afirmasi']['pengeluaran'], 0, ',', '.') }}
+                            </span>
+                        </div>
+
+                        <!-- 3. Sisa Anggaran -->
+                        <div class="pt-2 border-top mt-2">
+                            <small class="text-muted d-block fs-7">Sisa Anggaran / Saldo:</small>
+                            <h6 class="fw-bold text-warning-emphasis mb-0">
+                                Rp {{ number_format($ringkasanBos['Afirmasi']['saldo'], 0, ',', '.') }}
+                            </h6>
+                        </div>
                     </div>
-                    <h5 class="fw-bold text-warning-emphasis mb-1">Rp {{ number_format($ringkasanBos['Afirmasi']['saldo'], 0, ',', '.') }}</h5>
-                    <small class="text-muted d-block fs-7">Keluar: Rp {{ number_format($ringkasanBos['Afirmasi']['pengeluaran'], 0, ',', '.') }}</small>
-                    <a href="{{ route('spjs.index', ['jenis_bos' => 'Afirmasi']) }}" class="btn btn-sm btn-outline-warning w-100 mt-2">Buka BKU Afirmasi</a>
+
+                    <a href="{{ route('spjs.index', ['jenis_bos' => 'Afirmasi']) }}" class="btn btn-sm btn-outline-warning w-100 mt-3">Buka BKU Afirmasi</a>
                 </div>
             </div>
         </div>
@@ -122,14 +172,39 @@
         <!-- BOS Kinerja -->
         <div class="col-md-3">
             <div class="card border border-secondary-subtle border-start border-4 border-success shadow-sm h-100">
-                <div class="card-body p-3">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="fw-bold text-muted small">BOS KINERJA</span>
-                        <span class="badge bg-success-subtle text-success">{{ $ringkasanBos['Kinerja']['total_transaksi'] }} Transaksi</span>
+                <div class="card-body p-3 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="fw-bold text-muted small">BOS KINERJA</span>
+                            <span class="badge bg-success-subtle text-success">{{ $ringkasanBos['Kinerja']['total_transaksi'] }} Transaksi</span>
+                        </div>
+
+                        <!-- 1. Total Pagu Diterima -->
+                        <div class="mb-2">
+                            <small class="text-muted d-block fs-7">Total Pagu Diterima:</small>
+                            <span class="fw-bold text-success fs-6">
+                                Rp {{ number_format($ringkasanBos['Kinerja']['penerimaan'], 0, ',', '.') }}
+                            </span>
+                        </div>
+
+                        <!-- 2. Total Pembelanjaan -->
+                        <div class="mb-2">
+                            <small class="text-muted d-block fs-7">Total Pembelanjaan:</small>
+                            <span class="fw-semibold text-danger fs-6">
+                                Rp {{ number_format($ringkasanBos['Kinerja']['pengeluaran'], 0, ',', '.') }}
+                            </span>
+                        </div>
+
+                        <!-- 3. Sisa Anggaran -->
+                        <div class="pt-2 border-top mt-2">
+                            <small class="text-muted d-block fs-7">Sisa Anggaran / Saldo:</small>
+                            <h6 class="fw-bold text-success mb-0">
+                                Rp {{ number_format($ringkasanBos['Kinerja']['saldo'], 0, ',', '.') }}
+                            </h6>
+                        </div>
                     </div>
-                    <h5 class="fw-bold text-success mb-1">Rp {{ number_format($ringkasanBos['Kinerja']['saldo'], 0, ',', '.') }}</h5>
-                    <small class="text-muted d-block fs-7">Keluar: Rp {{ number_format($ringkasanBos['Kinerja']['pengeluaran'], 0, ',', '.') }}</small>
-                    <a href="{{ route('spjs.index', ['jenis_bos' => 'Kinerja']) }}" class="btn btn-sm btn-outline-success w-100 mt-2">Buka BKU Kinerja</a>
+
+                    <a href="{{ route('spjs.index', ['jenis_bos' => 'Kinerja']) }}" class="btn btn-sm btn-outline-success w-100 mt-3">Buka BKU Kinerja</a>
                 </div>
             </div>
         </div>
@@ -137,14 +212,39 @@
         <!-- BOS Daerah -->
         <div class="col-md-3">
             <div class="card border border-secondary-subtle border-start border-4 border-info shadow-sm h-100">
-                <div class="card-body p-3">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="fw-bold text-muted small">BOS DAERAH</span>
-                        <span class="badge bg-info-subtle text-info-emphasis">{{ $ringkasanBos['Daerah']['total_transaksi'] }} Transaksi</span>
+                <div class="card-body p-3 d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="fw-bold text-muted small">BOS DAERAH</span>
+                            <span class="badge bg-info-subtle text-info-emphasis">{{ $ringkasanBos['Daerah']['total_transaksi'] }} Transaksi</span>
+                        </div>
+
+                        <!-- 1. Total Pagu Diterima -->
+                        <div class="mb-2">
+                            <small class="text-muted d-block fs-7">Total Pagu Diterima:</small>
+                            <span class="fw-bold text-success fs-6">
+                                Rp {{ number_format($ringkasanBos['Daerah']['penerimaan'], 0, ',', '.') }}
+                            </span>
+                        </div>
+
+                        <!-- 2. Total Pembelanjaan -->
+                        <div class="mb-2">
+                            <small class="text-muted d-block fs-7">Total Pembelanjaan:</small>
+                            <span class="fw-semibold text-danger fs-6">
+                                Rp {{ number_format($ringkasanBos['Daerah']['pengeluaran'], 0, ',', '.') }}
+                            </span>
+                        </div>
+
+                        <!-- 3. Sisa Anggaran -->
+                        <div class="pt-2 border-top mt-2">
+                            <small class="text-muted d-block fs-7">Sisa Anggaran / Saldo:</small>
+                            <h6 class="fw-bold text-info-emphasis mb-0">
+                                Rp {{ number_format($ringkasanBos['Daerah']['saldo'], 0, ',', '.') }}
+                            </h6>
+                        </div>
                     </div>
-                    <h5 class="fw-bold text-info-emphasis mb-1">Rp {{ number_format($ringkasanBos['Daerah']['saldo'], 0, ',', '.') }}</h5>
-                    <small class="text-muted d-block fs-7">Keluar: Rp {{ number_format($ringkasanBos['Daerah']['pengeluaran'], 0, ',', '.') }}</small>
-                    <a href="{{ route('spjs.index', ['jenis_bos' => 'Daerah']) }}" class="btn btn-sm btn-outline-info w-100 mt-2">Buka BKU Daerah</a>
+
+                    <a href="{{ route('spjs.index', ['jenis_bos' => 'Daerah']) }}" class="btn btn-sm btn-outline-info w-100 mt-3">Buka BKU Daerah</a>
                 </div>
             </div>
         </div>

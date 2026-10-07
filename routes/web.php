@@ -1,11 +1,11 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\SchoolProfileController;
 use App\Http\Controllers\AccountCodeController;
 use App\Http\Controllers\ActivityCodeController;
 use App\Http\Controllers\BospDocumentController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\SchoolProfileController;
 use App\Http\Controllers\SpjController;
 use App\Http\Controllers\TemplateController;
 
@@ -18,7 +18,10 @@ Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard
 
 // Profil Sekolah
 Route::get('/school-profile', [SchoolProfileController::class, 'index'])->name('school-profile.index');
-Route::post('/school-profile', [SchoolProfileController::class, 'storeOrUpdate'])->name('school-profile.store');
+Route::post('/school-profile', [SchoolProfileController::class, 'storeOrUpdate'])->name('school-profile.storeOrUpdate');
+
+// SPJ Bulk Store
+Route::post('/spjs/bulk-store', [SpjController::class, 'bulkStore'])->name('spjs.bulk-store');
 
 // Master Kode Rekening & Kegiatan
 Route::resource('account-codes', AccountCodeController::class)->except(['create', 'show', 'edit']);

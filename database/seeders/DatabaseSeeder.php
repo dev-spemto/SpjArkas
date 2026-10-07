@@ -15,11 +15,15 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        // Seeder Profil Sekolah SMP Muhammadiyah Tonjong
+        $this->call([
+            SchoolProfileSeeder::class,
         ]);
+
+        // User bawaan jika diperlukan (opsional)
+        // User::factory()->create([
+        //     'name' => 'Admin Spemto',
+        //     'email' => 'smpmuhitonjong@gmail.com',
+        // ]);
     }
 }

@@ -7,6 +7,7 @@ use App\Models\ActivityCode;
 use App\Models\SchoolProfile;
 use App\Models\Spj;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class SpjController extends Controller
@@ -18,6 +19,7 @@ class SpjController extends Controller
         $startDate = $request->query('start_date');
         $endDate = $request->query('end_date');
 
+        // Tampilkan seluruh data transaksi tanpa pagination
         $spjs = Spj::when($search, function ($query, $search) {
             return $query->where('no_bkp', 'like', "%{$search}%")
                          ->orWhere('uraian', 'like', "%{$search}%")
@@ -28,35 +30,66 @@ class SpjController extends Controller
             return $query->where('jenis_bos', $jenisBos);
         })->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
             return $query->whereBetween('tanggal_transaksi', [$startDate, $endDate]);
-        })->orderBy('tanggal_transaksi', 'asc')->orderBy('id', 'asc')->paginate(20)->withQueryString();
+        })->orderBy('tanggal_transaksi', 'asc')->orderBy('id', 'asc')->get();
 
+        // Hitung saldo awal jika menggunakan filter tanggal
         $saldoAwal = 0;
-        if ($spjs->firstItem()) {
-            $firstItem = $spjs->first();
-            
-            $prevPenerimaan = Spj::where(function($q) use ($firstItem) {
-                $q->where('tanggal_transaksi', '<', $firstItem->tanggal_transaksi)
-                  ->orWhere(function($q2) use ($firstItem) {
-                      $q2->where('tanggal_transaksi', $firstItem->tanggal_transaksi)
-                         ->where('id', '<', $firstItem->id);
-                  });
-            })->where('jenis_transaksi', 'Penerimaan')->sum('nominal');
+        if ($startDate) {
+            $prevPenerimaan = Spj::where('tanggal_transaksi', '<', $startDate)
+                ->when($jenisBos, function ($query, $jenisBos) {
+                    return $query->where('jenis_bos', $jenisBos);
+                })->where('jenis_transaksi', 'Penerimaan')->sum('nominal');
 
-            $prevPengeluaran = Spj::where(function($q) use ($firstItem) {
-                $q->where('tanggal_transaksi', '<', $firstItem->tanggal_transaksi)
-                  ->orWhere(function($q2) use ($firstItem) {
-                      $q2->where('tanggal_transaksi', $firstItem->tanggal_transaksi)
-                         ->where('id', '<', $firstItem->id);
-                  });
-            })->where('jenis_transaksi', 'Pengeluaran')->sum('nominal');
+            $prevPengeluaran = Spj::where('tanggal_transaksi', '<', $startDate)
+                ->when($jenisBos, function ($query, $jenisBos) {
+                    return $query->where('jenis_bos', $jenisBos);
+                })->where('jenis_transaksi', 'Pengeluaran')->sum('nominal');
 
             $saldoAwal = $prevPenerimaan - $prevPengeluaran;
         }
 
-        $totalPenerimaan = $spjs->where('jenis_transaksi', 'Penerimaan')->sum('nominal');
-        $totalPengeluaran = $spjs->where('jenis_transaksi', 'Pengeluaran')->sum('nominal');
+        // 1. Total Pagu Diterima Murni (Sama persis seperti di Dashboard)
+        $totalPenerimaan = Spj::when($jenisBos, function ($query, $jenisBos) {
+            return $query->where('jenis_bos', $jenisBos);
+        })
+        ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
+            return $query->whereBetween('tanggal_transaksi', [$startDate, $endDate]);
+        })
+        ->where('jenis_transaksi', 'Penerimaan')
+        ->where(function($q) {
+            $q->where('uraian', 'like', '%Terima Dana%')
+              ->orWhere('uraian', 'like', '%Penerimaan Dana%')
+              ->orWhere('uraian', 'like', '%Pencairan%');
+        })
+        ->sum('nominal');
 
-        return view('spjs.index', compact('spjs', 'search', 'jenisBos', 'startDate', 'endDate', 'saldoAwal', 'totalPenerimaan', 'totalPengeluaran'));
+        // 2. Total Pembelanjaan Murni (Mengecualikan Tarik Tunai, Pindahan Kas, Pajak Bunga, & Bunga Bank)
+        $totalPengeluaran = Spj::when($jenisBos, function ($query, $jenisBos) {
+            return $query->where('jenis_bos', $jenisBos);
+        })
+        ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
+            return $query->whereBetween('tanggal_transaksi', [$startDate, $endDate]);
+        })
+        ->where('jenis_transaksi', 'Pengeluaran')
+        ->where(function($q) {
+            $q->where('uraian', 'not like', '%Tarik Tunai%')
+              ->where('uraian', 'not like', '%Pengambilan Tunai%')
+              ->where('uraian', 'not like', '%Pindahan Kas%')
+              ->where('uraian', 'not like', '%Pajak Bunga%')
+              ->where('uraian', 'not like', '%Bunga Bank%');
+        })
+        ->sum('nominal');
+
+        return view('spjs.index', compact(
+            'spjs', 
+            'search', 
+            'jenisBos', 
+            'startDate', 
+            'endDate', 
+            'saldoAwal', 
+            'totalPenerimaan', 
+            'totalPengeluaran'
+        ));
     }
 
     public function create()
@@ -70,18 +103,18 @@ class SpjController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'no_bkp' => 'nullable|string|max:100',
+            'no_bkp'            => 'nullable|string|max:100',
             'tanggal_transaksi' => 'required|date',
-            'jenis_bos' => 'required|in:Reguler,Kinerja,Daerah,Afirmasi',
-            'jenis_transaksi' => 'required|in:Pengeluaran,Penerimaan',
-            'kode_kegiatan' => 'nullable|string|max:100',
-            'nama_kegiatan' => 'nullable|string|max:255',
-            'kode_rekening' => 'nullable|string|max:100',
-            'nama_rekening' => 'nullable|string|max:255',
-            'uraian' => 'required|string',
-            'nominal' => 'required|numeric|min:0',
-            'penerima_toko' => 'nullable|string|max:255',
-            'file_pdf' => 'nullable|file|mimes:pdf|max:10240',
+            'jenis_bos'         => 'required|in:Reguler,Kinerja,Daerah,Afirmasi',
+            'jenis_transaksi'   => 'required|in:Pengeluaran,Penerimaan',
+            'kode_kegiatan'     => 'nullable|string|max:100',
+            'nama_kegiatan'     => 'nullable|string|max:255',
+            'kode_rekening'     => 'nullable|string|max:100',
+            'nama_rekening'     => 'nullable|string|max:255',
+            'uraian'            => 'required|string',
+            'nominal'           => 'required|numeric|min:0',
+            'penerima_toko'     => 'nullable|string|max:255',
+            'file_pdf'          => 'nullable|file|mimes:pdf|max:10240',
         ]);
 
         $validated['sumber_input'] = 'manual';
@@ -92,7 +125,60 @@ class SpjController extends Controller
 
         Spj::create($validated);
 
-        return redirect()->route('spjs.index')->with('success', 'Transaksi SPJ berhasil ditambahkan.');
+        return redirect()->route('spjs.index', ['jenis_bos' => $request->jenis_bos])->with('success', 'Transaksi SPJ berhasil ditambahkan.');
+    }
+
+    public function bulkStore(Request $request)
+    {
+        $request->validate([
+            'jenis_bos'              => 'required|in:Reguler,Kinerja,Daerah,Afirmasi',
+            'transactions'           => 'required|array|min:1',
+            'transactions.*.tanggal' => 'required|date',
+            'transactions.*.uraian'  => 'required|string',
+        ]);
+
+        try {
+            DB::transaction(function () use ($request) {
+                $accountMap = AccountCode::pluck('nama_rekening', 'kode_rekening')->toArray();
+                $activityMap = ActivityCode::pluck('nama_kegiatan', 'kode_kegiatan')->toArray();
+
+                foreach ($request->transactions as $item) {
+                    $penerimaan = isset($item['penerimaan']) ? (float)$item['penerimaan'] : 0;
+                    $pengeluaran = isset($item['pengeluaran']) ? (float)$item['pengeluaran'] : 0;
+
+                    $jenisTransaksi = ($penerimaan > 0) ? 'Penerimaan' : 'Pengeluaran';
+                    $nominal = ($penerimaan > 0) ? $penerimaan : $pengeluaran;
+
+                    $kodeRekening = !empty($item['account_code']) ? trim($item['account_code']) : null;
+                    $kodeKegiatan = !empty($item['activity_code']) ? trim($item['activity_code']) : null;
+
+                    Spj::create([
+                        'no_bkp'            => !empty($item['no_bukti']) ? trim($item['no_bukti']) : null,
+                        'tanggal_transaksi' => date('Y-m-d', strtotime($item['tanggal'])),
+                        'jenis_bos'         => $request->jenis_bos,
+                        'jenis_transaksi'   => $jenisTransaksi,
+                        'kode_kegiatan'     => $kodeKegiatan,
+                        'nama_kegiatan'     => $kodeKegiatan ? ($activityMap[$kodeKegiatan] ?? null) : null,
+                        'kode_rekening'     => $kodeRekening,
+                        'nama_rekening'     => $kodeRekening ? ($accountMap[$kodeRekening] ?? null) : null,
+                        'uraian'            => trim($item['uraian']),
+                        'nominal'           => $nominal,
+                        'penerima_toko'     => !empty($item['penerima_toko']) ? trim($item['penerima_toko']) : null,
+                        'sumber_input'      => 'manual',
+                    ]);
+                }
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => count($request->transactions) . ' transaksi BKU berhasil diimpor!'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengimpor data: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function edit(Spj $spj)
@@ -106,18 +192,18 @@ class SpjController extends Controller
     public function update(Request $request, Spj $spj)
     {
         $validated = $request->validate([
-            'no_bkp' => 'nullable|string|max:100',
+            'no_bkp'            => 'nullable|string|max:100',
             'tanggal_transaksi' => 'required|date',
-            'jenis_bos' => 'required|in:Reguler,Kinerja,Daerah,Afirmasi',
-            'jenis_transaksi' => 'required|in:Pengeluaran,Penerimaan',
-            'kode_kegiatan' => 'nullable|string|max:100',
-            'nama_kegiatan' => 'nullable|string|max:255',
-            'kode_rekening' => 'nullable|string|max:100',
-            'nama_rekening' => 'nullable|string|max:255',
-            'uraian' => 'required|string',
-            'nominal' => 'required|numeric|min:0',
-            'penerima_toko' => 'nullable|string|max:255',
-            'file_pdf' => 'nullable|file|mimes:pdf|max:10240',
+            'jenis_bos'         => 'required|in:Reguler,Kinerja,Daerah,Afirmasi',
+            'jenis_transaksi'   => 'required|in:Pengeluaran,Penerimaan',
+            'kode_kegiatan'     => 'nullable|string|max:100',
+            'nama_kegiatan'     => 'nullable|string|max:255',
+            'kode_rekening'     => 'nullable|string|max:100',
+            'nama_rekening'     => 'nullable|string|max:255',
+            'uraian'            => 'required|string',
+            'nominal'           => 'required|numeric|min:0',
+            'penerima_toko'     => 'nullable|string|max:255',
+            'file_pdf'          => 'nullable|file|mimes:pdf|max:10240',
         ]);
 
         if ($request->hasFile('file_pdf')) {
@@ -129,7 +215,7 @@ class SpjController extends Controller
 
         $spj->update($validated);
 
-        return redirect()->route('spjs.index')->with('success', 'Transaksi SPJ berhasil diperbarui.');
+        return redirect()->route('spjs.index', ['jenis_bos' => $request->jenis_bos])->with('success', 'Transaksi SPJ berhasil diperbarui.');
     }
 
     public function destroy(Spj $spj)
@@ -158,7 +244,6 @@ class SpjController extends Controller
             $query->latest('tanggal_transaksi')->take(1);
         }
 
-        // Filter otomatis: Hanya ambil transaksi pengeluaran/pembelian yang memiliki No. BKP / BPU dan Kode Rekening/Kegiatan
         $rawSpjs = $query->where('jenis_transaksi', 'Pengeluaran')
             ->whereNotNull('no_bkp')
             ->where('no_bkp', '!=', '')
