@@ -1,9 +1,27 @@
-﻿<!DOCTYPE html>
+﻿@php
+    // Tentukan nama layout dinamis untuk judul PDF
+    $layoutNames = [
+        'a2'       => 'Kwitansi A2',
+        'a2_bpu'   => 'Kwitansi A2 BPU Sama',
+        'umum'     => 'Kwitansi Umum',
+        'umum_bpu' => 'Kwitansi Umum BPU Sama',
+    ];
+
+    $layoutLabel = $layoutNames[$type] ?? 'Kwitansi SPJ';
+    $namaSekolah = $schoolProfile->nama_sekolah ?? 'SMP Muhammadiyah Tonjong';
+    $tahun       = date('Y');
+
+    // Format Nama File Default saat Export PDF:
+    // Contoh: "Kwitansi A2_SMP Muhammadiyah Tonjong_2026"
+    $exportTitle = $layoutLabel . '_' . $namaSekolah . '_' . $tahun;
+@endphp
+
+<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bundle Kwitansi SPJ</title>
+    <title>{{ $exportTitle }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body { font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #000; background: #e9ecef; }
@@ -118,13 +136,13 @@
             width: 100%;
         }
 
-        /* TTD Kepala Sekolah - Format Kwitansi A2 & A2 BPU (Diperbesar & Geser Kanan) */
+        /* TTD Kepala Sekolah - Format Kwitansi A2 & A2 BPU */
         .ttd-kepsek-a2 {
             position: absolute;
-            top: -60px;       /* Posisikan melayang pas di atas teks nama */
-            left: 56%;        /* Digeser ke kanan (dari 50% ke 56%) */
+            top: -55px;
+            left: 56%;
             transform: translateX(-50%);
-            max-width: 260px; /* Diperbesar dari 210px ke 260px */
+            max-width: 260px;
             max-height: 90px;
             z-index: 10;
             pointer-events: none;
@@ -134,8 +152,8 @@
         /* TTD Bendahara - Format Kwitansi A2 & A2 BPU */
         .ttd-bendahara-a2 {
             position: absolute;
-            top: -48px;       /* Ditarik naik lebih tinggi agar pas di atas garis nama */
-            left: 48%;        /* Posisi pas di tengah nama */
+            top: -45px;
+            left: 48%;
             transform: translateX(-50%);
             max-width: 110px;
             max-height: 60px;
@@ -148,7 +166,7 @@
         .ttd-kepsek-umum {
             position: absolute;
             top: -15px;
-            left: 55%; /* Diubah dari 50% ke 55% untuk menggeser ke kanan */
+            left: 55%;
             transform: translateX(-50%);
             max-width: 275px;
             max-height: 95px;
@@ -157,11 +175,11 @@
             mix-blend-mode: multiply;
         }
 
-        /* TTD Bendahara - Format Kwitansi Umum*/
+        /* TTD Bendahara - Format Kwitansi Umum */
         .ttd-bendahara-umum {
             position: absolute;
             top: -4px;
-            left: 45%; /* Diubah dari 50% ke 45% untuk menggeser ke kiri */
+            left: 45%;
             transform: translateX(-50%);
             max-width: 105px;
             max-height: 55px;
@@ -250,30 +268,6 @@
         1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
         'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
     ];
-
-    // Deteksi & Muat Logo Sekolah
-    $logoSrc = null;
-    if ($schoolProfile && !empty($schoolProfile->logo)) {
-        $cleanLogo = ltrim(str_replace('storage/', '', $schoolProfile->logo), '/');
-        $possiblePaths = [
-            storage_path('app/public/' . $cleanLogo),
-            public_path('storage/' . $cleanLogo),
-            public_path($schoolProfile->logo),
-            storage_path('app/' . $schoolProfile->logo),
-        ];
-
-        foreach ($possiblePaths as $path) {
-            if (file_exists($path) && !is_dir($path)) {
-                $ext = pathinfo($path, PATHINFO_EXTENSION);
-                $logoSrc = 'data:image/' . ($ext ?: 'png') . ';base64,' . base64_encode(file_get_contents($path));
-                break;
-            }
-        }
-
-        if (!$logoSrc) {
-            $logoSrc = asset('storage/' . $cleanLogo);
-        }
-    }
 @endphp
 
 <!-- Loop Cetak Transaksi -->
@@ -293,11 +287,7 @@
             <table class="table-a2">
                 <tr>
                     <td style="width: 12%; text-align: center; vertical-align: middle;" class="no-border-right">
-                        @if($logoSrc)
-                            <img src="{{ $logoSrc }}" style="max-height: 55px; max-width: 55px; object-fit: contain;">
-                        @else
-                            <div style="font-size: 8px; font-weight: bold; color: #666;">[LOGO]</div>
-                        @endif
+                        <img src="{{ asset('images/logo-dinas.png') }}" style="max-height: 55px; max-width: 55px; object-fit: contain;" alt="Logo Sekolah">
                     </td>
                     <td style="width: 53%;" class="no-border-left">
                         <div class="fw-bold text-uppercase text-center mb-1" style="font-size: 11px;">PEMERINTAH KABUPATEN BREBES</div>
@@ -578,42 +568,37 @@
                     <!-- Tanda Tangan (3 Kolom Presisi Rapat) -->
                     <table class="w-100 text-center" style="font-size: 10.5px; table-layout: fixed;">
                         <tr>
-                            <!-- Tanda Tangan (3 Kolom Presisi Rapat) -->
-                            <table class="w-100 text-center" style="font-size: 10.5px; table-layout: fixed;">
-                                <tr>
-                                    <!-- TTD KEPALA SEKOLAH (UMUM) -->
-                                    <td style="width: 33%; vertical-align: top;">
-                                        <div>Mengetahui :</div>
-                                        <div>Kepala {{ $schoolProfile->nama_sekolah ?? 'SMP MUHAMMADIYAH TONJONG' }},</div>
-                                        <div class="ttd-wrapper mt-1">
-                                            <img src="{{ asset('images/ttd-kepsek.png') }}" class="ttd-kepsek-umum" alt="TTD Kepsek">
-                                            <div style="height: 38px;"></div>
-                                            <strong class="text-uppercase"><u>{{ $schoolProfile->nama_kepala_sekolah ?? '...................................' }}</u></strong><br>
-                                            <span>NIP. {{ $schoolProfile->nip_kepala_sekolah ?? '-' }}</span>
-                                        </div>
-                                    </td>
+                            <!-- TTD KEPALA SEKOLAH (UMUM) -->
+                            <td style="width: 33%; vertical-align: top;">
+                                <div>Mengetahui :</div>
+                                <div>Kepala {{ $schoolProfile->nama_sekolah ?? 'SMP MUHAMMADIYAH TONJONG' }},</div>
+                                <div class="ttd-wrapper mt-1">
+                                    <img src="{{ asset('images/ttd-kepsek.png') }}" class="ttd-kepsek-umum" alt="TTD Kepsek">
+                                    <div style="height: 38px;"></div>
+                                    <strong class="text-uppercase"><u>{{ $schoolProfile->nama_kepala_sekolah ?? '...................................' }}</u></strong><br>
+                                    <span>NIP. {{ $schoolProfile->nip_kepala_sekolah ?? '-' }}</span>
+                                </div>
+                            </td>
 
-                                    <!-- TTD BENDAHARA (UMUM) -->
-                                    <td style="width: 33%; vertical-align: top;">
-                                        <div>Telah dibayar lunas</div>
-                                        <div>Bendahara,</div>
-                                        <div class="ttd-wrapper mt-1">
-                                            <img src="{{ asset('images/ttd-bendahara.png') }}" class="ttd-bendahara-umum" alt="TTD Bendahara">
-                                            <div style="height: 38px;"></div>
-                                            <strong class="text-uppercase"><u>{{ $schoolProfile->nama_bendahara ?? '...................................' }}</u></strong><br>
-                                            <span>NIP. {{ $schoolProfile->nip_bendahara ?? '-' }}</span>
-                                        </div>
-                                    </td>
+                            <!-- TTD BENDAHARA (UMUM) -->
+                            <td style="width: 33%; vertical-align: top;">
+                                <div>Telah dibayar lunas</div>
+                                <div>Bendahara,</div>
+                                <div class="ttd-wrapper mt-1">
+                                    <img src="{{ asset('images/ttd-bendahara.png') }}" class="ttd-bendahara-umum" alt="TTD Bendahara">
+                                    <div style="height: 38px;"></div>
+                                    <strong class="text-uppercase"><u>{{ $schoolProfile->nama_bendahara ?? '...................................' }}</u></strong><br>
+                                    <span>NIP. {{ $schoolProfile->nip_bendahara ?? '-' }}</span>
+                                </div>
+                            </td>
 
-                                    <!-- TTD PENERIMA -->
-                                    <td style="width: 34%; vertical-align: top;">
-                                        <div>{{ $namaKecamatan }}, {{ $tglFormated }}</div>
-                                        <div>Penerima,</div>
-                                        <div style="height: 44px;"></div>
-                                        <strong class="text-uppercase"><u>{{ $spj->penerima_toko ?? '...................................' }}</u></strong>
-                                    </td>
-                                </tr>
-                            </table>
+                            <!-- TTD PENERIMA -->
+                            <td style="width: 34%; vertical-align: top;">
+                                <div>{{ $namaKecamatan }}, {{ $tglFormated }}</div>
+                                <div>Penerima,</div>
+                                <div style="height: 44px;"></div>
+                                <strong class="text-uppercase"><u>{{ $spj->penerima_toko ?? '...................................' }}</u></strong>
+                            </td>
                         </tr>
                     </table>
                 </div>
